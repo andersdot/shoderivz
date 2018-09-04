@@ -5,6 +5,7 @@ from __future__ import print_function
 
 import numpy as np
 
+
 from tensorflow import Print as tfPrint
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
@@ -22,7 +23,7 @@ __all__ = [
 ]
 
 def leapfrog_integrator(step_size, time, initial_position, initial_momentum,
-                        potential_and_grad, initial_grad, name=None):
+                        potential_and_grad, initial_grad, k=np.float64(0.0), name=None):
   """
   Example: Simple quadratic potential.
   ```python
@@ -48,32 +49,32 @@ def leapfrog_integrator(step_size, time, initial_position, initial_momentum,
   plt.plot(positions[:, 0])
   ```
   """
-  def leapfrog_wrapper(step_size, time, x, m, grad, l):
+  def leapfrog_wrapper(step_size, time, x, m, grad, k, l):
     #input is call from while statement, must be same as counter_fn
-    x, m, _, grad = leapfrog_step(step_size, x, m, potential_and_grad, grad)
-    return step_size, time, x, m, grad, l + 1
+    x, m, _, grad = leapfrog_step(step_size, x, m, potential_and_grad, grad, k=k)
+    return step_size, time, x, m, grad, k, l + 1
 
-  def time_fn(step_size, time, c, d, e, counter):  # pylint: disable=unused-argument
+  def time_fn(step_size, time, c, d, e, f, counter):  # pylint: disable=unused-argument
     counter = tfPrint(counter, [counter, step_size*counter, time])
     return (counter + 1.)*step_size  < time
 
   with ops.name_scope(name, 'leapfrog_integrator',
                       [step_size, time, initial_position, initial_momentum,
                        initial_grad]):
-    _, _, new_x, new_m, new_grad, count = control_flow_ops.while_loop(
+    _, _, new_x, new_m, new_grad, k, count = control_flow_ops.while_loop(
         time_fn, leapfrog_wrapper, [step_size, time, initial_position,
-                                       initial_momentum, initial_grad,
+                                       initial_momentum, initial_grad, k,
                                        array_ops.constant(np.float64(0.0))], back_prop=False)
     # We're counting on the runtime to eliminate this redundant computation.
-    new_potential, new_grad = potential_and_grad(new_x)
+    new_potential, new_grad = potential_and_grad(new_x, k=k)
 
     dt_tiny = time - count*step_size
-    x, m, _, g = leapfrog_step(dt_tiny, new_x, new_m, potential_and_grad, new_grad)
+    x, m, _, g = leapfrog_step(dt_tiny, new_x, new_m, potential_and_grad, new_grad, k=k)
   return new_x, new_m, new_potential, new_grad, x, m, count*step_size
 
 
 def leapfrog_step(step_size, position, momentum, potential_and_grad, grad,
-                  name=None):
+                  k=np.float64(0.0), name=None):
   """  Example: Simple quadratic potential.
   ```python
   def potential_and_grad(position):
@@ -103,7 +104,7 @@ def leapfrog_step(step_size, position, momentum, potential_and_grad, grad,
                                               grad]):
     momentum -= np.float64(0.5)* step_size * grad
     position += step_size * momentum
-    potential, grad = potential_and_grad(position)
+    potential, grad = potential_and_grad(position, k=k)
     momentum -= np.float64(0.5) * step_size * grad
 
   return position, momentum, potential, grad
