@@ -55,7 +55,7 @@ def leapfrog_integrator(step_size, time, initial_position, initial_momentum,
 
   def time_fn(step_size, time, c, d, e, counter):  # pylint: disable=unused-argument
     counter = tfPrint(counter, [counter, step_size*counter, time])
-    return counter*step_size < time
+    return (counter + 1.)*step_size  < time
 
   with ops.name_scope(name, 'leapfrog_integrator',
                       [step_size, time, initial_position, initial_momentum,
@@ -69,7 +69,7 @@ def leapfrog_integrator(step_size, time, initial_position, initial_momentum,
 
     dt_tiny = time - count*step_size
     x, m, _, g = leapfrog_step(dt_tiny, new_x, new_m, potential_and_grad, new_grad)
-  return new_x, new_m, new_potential, new_grad, x, m
+  return new_x, new_m, new_potential, new_grad, x, m, count*step_size
 
 
 def leapfrog_step(step_size, position, momentum, potential_and_grad, grad,
