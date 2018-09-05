@@ -5,7 +5,7 @@ from __future__ import print_function
 
 import numpy as np
 
-
+import tensorflow as tf
 from tensorflow import Print as tfPrint
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
@@ -23,7 +23,7 @@ __all__ = [
 ]
 
 def leapfrog_integrator(step_size, time, initial_position, initial_momentum,
-                        potential_and_grad, initial_grad, k=np.float64(0.0), name=None):
+                        potential_and_grad, initial_grad, previous_time, k=np.float64(0.0), name=None):
 
   def leapfrog_wrapper(step_size, time, x, m, grad, k, l):
     #input is call from while statement, must be same as counter_fn
@@ -43,10 +43,17 @@ def leapfrog_integrator(step_size, time, initial_position, initial_momentum,
                                        array_ops.constant(np.float64(0.0))], back_prop=False)
     # We're counting on the runtime to eliminate this redundant computation.
     new_potential, new_grad = potential_and_grad(new_x, k=k)
+    ip = tf.assign(initial_position, new_x)
+    im = tf.assign(initial_momentum, new_m)
+    ig = tf.assign(initial_grad, new_grad)
+    it = tf.assign(previous_time, count*step_size)
+    with tf.control_dependencies([ip, im, ig, it]):
+        dt_tiny = time - count*step_size
+        x, m, _, g = leapfrog_step(dt_tiny, new_x, new_m, potential_and_grad, new_grad, k=k)
+  #print(initial_grad)
+  #print(initial_position)
 
-    dt_tiny = time - count*step_size
-    x, m, _, g = leapfrog_step(dt_tiny, new_x, new_m, potential_and_grad, new_grad, k=k)
-  return new_x, new_m, new_potential, new_grad, x, m, count*step_size
+  return x, m
 
 
 def leapfrog_step(step_size, position, momentum, potential_and_grad, grad,
