@@ -107,7 +107,7 @@ def _leapfrog(x0,
               step_size, name=None):
   """Model the positions and velocities at t_obs in a potential described in function potential_and_grad."""
 
-  with ops.name_scope(name, 'leapfrog',
+  with ops.name_scope(name, 'integrate',
                     [x0, v0, k, t_obs, step_size]) as scope:
 
     def leapfrog_wrapper(step_size, time, k, leapfrog_state, l):
@@ -177,7 +177,7 @@ def leapfrog(x0,
     v: the observed velocities
   """
 
-  with ops.name_scope(name, 'integrate', [x0, v0, k, t_obs, step_size]) as scope:
+  with ops.name_scope(name, 'leapfrog', [x0, v0, k, t_obs, step_size]) as scope:
 
     #x0 = ops.convert_to_tensor(x0, dtype=x0.dtype, name='x0')
     #v0 = ops.convert_to_tensor(v0, dtype=v0.dtype, name='v0')
@@ -189,4 +189,4 @@ def leapfrog(x0,
             v0,
             k,
             t_obs,
-            step_size)
+            step_size, name=scope)
