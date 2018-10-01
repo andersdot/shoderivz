@@ -96,6 +96,10 @@ class ShoIntegrateRevOp : public OpKernel {
       bvn = bv(n-1) + bvhalf;
       ban = ba(n-1) + 0.5 * step_size_ * bvhalf;
     }
+
+    bk(0) -= x(0) * ban;
+    bxn -= k * ban;
+
     bx0(0) = bxn;
     bv0(0) = bvn;
   }
