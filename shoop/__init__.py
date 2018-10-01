@@ -21,3 +21,13 @@ def load_op_library(name):
 
 
 ops = load_op_library("ops")
+
+
+@tf.RegisterGradient("ShoIntegrate")
+def _sho_integrate_rev(op, *grads):
+    x0, v0, k, N = op.inputs
+    tgrid, xgrid, vgrid, agrid = op.outputs
+    btgrid, bxgrid, bvgrid, bagrid = grads
+    bx0, bv0, bk = ops.sho_integrate_rev(k, xgrid, bxgrid, bvgrid, bagrid,
+                                         op.get_attr("step_size"))
+    return (bx0, bv0, bk, None)
