@@ -1,4 +1,4 @@
-# shoderivz
+# Speeding up inferences with evolving physical systems
 
 A hack to show how using the derivates of the evolution of aa physical system, here a simple harmonic oscillator, allow for a quicker evolution. 
 
